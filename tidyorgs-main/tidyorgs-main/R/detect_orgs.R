@@ -6,11 +6,18 @@ detect_orgs <- function(data, id, input, output,
                         parent_org = FALSE, 
                         org_type = FALSE){
   
+  print("HI")
   id <- dplyr::enquo(id)
   input <- dplyr::enquo(input)
   output <- dplyr::enquo(output)
   email <- dplyr::enquo(email)
-  
+
+  print("HI")
+  print(id)
+  print(input)
+  print(output) 
+  print(email)
+
   if (missing(email)) {
     
     classified_academic <- data %>%

@@ -115,9 +115,21 @@ detect_government <- function(data, id, input, output,
   suppressMessages(
     if(country == TRUE || parent_org == TRUE || org_type == TRUE){
       #academic_institutions <- tidyorgs::academic_institutions %>%
+      # government_data <- government_data %>%
+      #   dplyr::mutate("{{output}}" := organization_name) %>%
+      #   dplyr::select(!!output, country, parent_org, org_type)
+
       government_data <- government_data %>%
-        dplyr::mutate("{{output}}" := organization_name) %>%
-        dplyr::select(!!output, country, parent_org, org_type)
+        dplyr::mutate("{{output}}" := organization_name)
+    
+      # Select only existing columns dynamically
+      selected_columns <- c(rlang::quo_name(output))
+      if (country == TRUE) selected_columns <- c(selected_columns, "country")
+      if (parent_org == TRUE) selected_columns <- c(selected_columns, "parent_org")
+      if (org_type == TRUE) selected_columns <- c(selected_columns, "org_type")
+
+      government_data <- government_data %>%
+          dplyr::select(all_of(selected_columns))
       
       if(country == TRUE && parent_org == TRUE && org_type == TRUE){ # TTT
         joined_data <- joined_data %>% dplyr::left_join(government_data)
