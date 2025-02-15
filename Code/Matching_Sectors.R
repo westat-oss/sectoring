@@ -22,7 +22,7 @@ devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/
 
 academic_tidyorgs_path <- "sectoring/tidyorgs-main/tidyorgs-main/data/academic_institutions.rda"
 load(academic_tidyorgs_path)
-data_by_carol <- read.csv("sectoring\\Code\\Sectoring_Carol\\Sector_Mapping_Institutions_Patent_Assignees.csv")
+data_by_carol <- read.csv("C:\\Users\\Saluja_R\\OneDrive - Westat\\Desktop\\Westat\\OSS\\Sectoring_Carol\\Sector_Mapping_Institutions_Patent_Assignees.csv")
 
 nrow(academic_institutions)
 
@@ -68,11 +68,15 @@ data_carol_business <- data_by_carol %>%
 nrow(business_data)
 nrow(data_carol_business)
 
-
+catch_terms_pattern <- paste(business_data$catch_terms, collapse = "|")
 result_carol_business <- data_carol_business %>%
-  rowwise() %>%
-  mutate(match_found = any(sapply(business_data$catch_terms, function(ct) check_match(disambig_assignee_organization, ct)))) %>%
-  ungroup()
+  mutate(match_found = str_detect(disambig_assignee_organization, regex(catch_terms_pattern, ignore_case = TRUE)))
+
+
+# result_carol_business <- data_carol_business %>%
+#   rowwise() %>%
+#   mutate(match_found = any(sapply(business_data$catch_terms, function(ct) check_match(disambig_assignee_organization, ct)))) %>%
+#   ungroup()
 
 result_carol_business <- result_carol_business %>%
   filter(match_found == FALSE) %>%
@@ -101,10 +105,15 @@ data_carol_government <- data_by_carol %>%
 
 nrow(government_data)
 
+catch_terms_pattern <- paste(government_data$catch_terms, collapse = "|")
 result_carol_government <- data_carol_government %>%
-  rowwise() %>%
-  mutate(match_found = any(sapply(government_data$catch_terms, function(ct) check_match(disambig_assignee_organization, ct)))) %>%
-  ungroup()
+  mutate(match_found = str_detect(disambig_assignee_organization, regex(catch_terms_pattern, ignore_case = TRUE)))
+
+
+# result_carol_government <- data_carol_government %>%
+#   rowwise() %>%
+#   mutate(match_found = any(sapply(government_data$catch_terms, function(ct) check_match(disambig_assignee_organization, ct)))) %>%
+#   ungroup()
 
 result_carol_government <- result_carol_government %>%
     filter(match_found == FALSE) %>%
