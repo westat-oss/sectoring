@@ -13,8 +13,11 @@ install.packages("dplyr")
 # Update the package path 
 # make sure to install tidyorgs first as it a dependency for diverstidy
 
-detach("package:diverstidy", unload = TRUE)
-detach("package:tidyorgs", unload = TRUE)
+
+# detach("package:diverstidy", unload = TRUE)
+# detach("package:tidyorgs", unload = TRUE)
+
+
 devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/tidyorgs-main/tidyorgs-main", force = TRUE)
 devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main", force = TRUE)
 
@@ -30,6 +33,7 @@ library(readxl)
 library(writexl)
 options(width = 1000)
 library(arrow)
+library(progress)
 
 # ------------------LOADING THE DATA------------------
 
@@ -70,91 +74,111 @@ if (length(row_index) > 0) {  # Ensure the country exists in the dataset
   countries_data$recode_countries[row_index] <- gsub("\\(\\?!new \\)", "", countries_data$recode_countries[row_index])
 }
 
-# update the path
-save(countries_data, file = "C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main/data/countries_data.rda")
+# save(countries_data, file = "C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main/data/countries_data.rda")
 
 
-#------------------TESTING THE DATA------------------
+# For Jeremy: UPDATE PATH TO USER DATA HERE
+data <- read_parquet('C:\\Users\\Saluja_R\\OneDrive - Westat\\Desktop\\Westat\\OSS\\Sectoring GH\\sectoring\\Code\\user_data_2025_02_11_filtered.parquet')
 
-# update the path to users data here
-data <- read_parquet('C:\\Users\\Saluja_R\\OneDrive - Westat\\Desktop\\Westat\\OSS\\Sectoring GH\\sectoring\\Code\\user_data_2024_12_04.parquet')
-
-# Re-encode columns that may contain problematic characters
+#  Re-encode columns that may contain problematic characters   - For Jeremy: THIS WILL TAKE TIME
 filtered_data <- data %>%
   mutate(across(everything(), ~ enc2utf8(as.character(.)))) 
 
 
+# classified_by_countries <- filtered_data %>% 
+  # detect_geographies(login, input = c("location", "bio", "socialaccounts"), email = "author_email")
+filtered_data <- data
+# Define parameters
+# colnames(classified_by_countries)
 
-# detach the package and install again to make sure the updates are applied
-detach("package:diverstidy", unload = TRUE)
+total_rows <- nrow(filtered_data)
+num_parts <- 100  # Split data into 100 parts            # For Jeremy: You can change this number to adjust the number of parts
+rows_per_part <- ceiling(total_rows / num_parts)  # Rows in each part
 
-# change path here
-devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main", force = TRUE)
-# load the package again
-library(diverstidy)
+# Define base output directory      # For Jeremy: UPDATE THE OUTPUT DIRECTORY HERE
+output_base_dir <- "C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/Code/Partitioned_Output_2_26"
 
-classified_by_countries <- filtered_data %>% 
-  detect_geographies(login, input = c("location", "bio", "socialaccounts"), output = "country", email = author_email)
+# Create output directory if it doesn't exist
+if (!dir.exists(output_base_dir)) {
+  dir.create(output_base_dir, recursive = TRUE)
+}
 
+# Set the part number from which to resume processing
+resume_from_part <- 1  # For Jeremy: Change this to the part you want to resume from - if running for the first time set to 1
 
-# CLEANING STEPS (once the output is formed)
+# progress bar
+pb <- progress_bar$new(
+  format = "Processing Part :current / :total [:bar] :percent (:elapsed secs)",
+  total = num_parts - resume_from_part + 1, clear = FALSE, width = 60
+)
 
-# PROCESS 1: To see if the is a state abbreviation in the location and the country is United States
-state_codes <- c("al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id", "il", "in", "ia", "ks", "ky", 
-                 "la", "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", 
-                 "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", 
-                 "wv", "wi", "wy", "nyc", "dc", "sf")
+for (part_num in resume_from_part:num_parts) {
+  start_idx <- ((part_num - 1) * rows_per_part) + 1
+  end_idx <- min(part_num * rows_per_part, total_rows)
+  
+  part_data <- filtered_data[start_idx:end_idx, ]
 
-classified_by_countries <- classified_by_countries %>%
-  mutate(location = tolower(location), # Ensure lowercase for comparison
-         country = case_when(
-           !is.na(location) & location != "nothing" &  # location should not be null or nothing
-           substr(location, nchar(location)-1, nchar(location)) %in% state_codes &  # checking if the last two characters correspond to a state abbreviation
-           str_detect(tolower(country), fixed("united states", ignore_case = TRUE)) ~ "United States", # checking if the country is United States - detected already by the package
-           TRUE ~ country
-         ))
+  # Define output folder for this part
+  part_output_dir <- file.path(output_base_dir, paste0("Part_", part_num))
+  
+  # Define output file path
+  output_file <- file.path(part_output_dir, paste0("user_data_output_Part_", part_num, ".parquet"))
 
-# PROCESS 2: Remove all NAs from the country column
-classified_by_countries <- classified_by_countries %>%
-  mutate(
-    # Step 1: If "NA" is present and only one "|", remove both "NA" and "|"
-    country = if_else(
-      str_count(country, "\\|") == 1 & str_detect(country, "NA"),
-      str_replace_all(country, "\\|?NA\\|?", ""),  # Remove single "NA" and "|"
-      country
-    )
-  ) %>%
-  mutate(
-    # Step 2: If multiple "|" exist, remove "|NA" and "NA|"
-    country = if_else(
-      str_count(country, "\\|") > 1,
-      str_replace_all(str_replace_all(country, "\\|NA", ""), "NA\\|", ""),
-      country
-    )
-  ) %>%
-  mutate(
-    # Step 3: Remove any remaining standalone "|" if present
-    country = str_replace_all(country, "^\\||\\|$", "")
-  )
+  # Check if this part has already been processed (file exists)
+  if (file.exists(output_file)) {
+    cat(sprintf("\nSkipping Part %d (already processed: %s)\n", part_num, output_file))
+    pb$tick()  # Progress bar updates even when skipping
+    next  # Skip to the next iteration
+  }
 
+  # Print which part is running
+  cat(sprintf("\nProcessing Part %d out of %d (Rows: %d to %d)\n", part_num, num_parts, start_idx, end_idx))
+  
+  # Run detect_geographies on this part
+  part_result <- part_data %>%
+      detect_geographies(
+        login, 
+        input = c("location", "bio", "socialaccounts"),  
+        email = "author_email"
+      )
+  
+  # Create folder for the part if it doesn't exist
+  if (!dir.exists(part_output_dir)) {
+    dir.create(part_output_dir, recursive = TRUE)
+  }
 
-# PROCESS 3: If the location is New Jersey then it it United States and not Jersey
-classified_by_countries <- classified_by_countries %>%
-    mutate(
-            country = if_else(
-            str_detect(tolower(location), "new jersey"),
-            "United States",
-            country
-            )
-    )
+  # Save the output file in its respective folder
+  write_parquet(part_result, sink = output_file)
+  
+  cat(sprintf("\nSaved Part %d output to %s\n", part_num, output_file))
 
+  # Update progress bar
+  pb$tick()
+}
 
+cat("\nAll remaining parts processed and saved successfully!\n")
 
-# save the file
-# write.csv(classified_by_countries, 
-#           file = "C:\\Users\\Saluja_R\\OneDrive - Westat\\Desktop\\Westat\\OSS\\Sectoring GH\\sectoring\\Code\\user_data_output_2024_12_04_DRAFT12.csv")
+# Combine all batch results into one final dataframe
 
-# to create a parquest file
-write_parquet(classified_by_countries, 
-               sink = "C:\\Users\\Saluja_R\\OneDrive - Westat\\Desktop\\Westat\\OSS\\Sectoring GH\\sectoring\\Code\\user_data_output_2024_12_04_DRAFT12.parquet")
+# Define the base directory where partitioned files are stored --For Jeremy: CHANGE THE OUTPUT DIRECTORY ABOVE
+output_base_dir <- "C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/Code/Partitioned_Output"
+
+# List all Parquet files from all parts
+parquet_files <- list.files(output_base_dir, pattern = "\\.parquet$", recursive = TRUE, full.names = TRUE)
+
+# Check if there are files to process
+if (length(parquet_files) == 0) {
+  stop("No Parquet files found in the specified directory.")
+}
+
+# Read and combine all Parquet files into a single dataframe
+combined_data <- bind_rows(lapply(parquet_files, read_parquet))
+
+# Define the output file path for the merged file
+merged_output_file <- file.path(output_base_dir, "user_data_combined.parquet")
+
+# Save the merged data
+write_parquet(combined_data, sink = merged_output_file)
+
+cat(sprintf("\nMerged %d files into %s\n", length(parquet_files), merged_output_file))
 
