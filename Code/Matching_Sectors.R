@@ -15,8 +15,8 @@ library(countrycode)
 
 # intall local package
 # change the path here
-devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/tidyorgs-main/tidyorgs-main", force = TRUE)
-devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main", force = TRUE)
+devtools::install_local("C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main", force = TRUE)
+devtools::install_local("C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main", force = TRUE)
 
 # ACADEMIC
 
@@ -129,3 +129,108 @@ government_data <- bind_rows(government_data, result_carol_government)
 nrow(government_data)
 
 save(government_data, file = "sectoring/tidyorgs-main/tidyorgs-main/data/government_data.rda")
+
+
+
+# update made on - 3/30 - removing duplicates and cleaning for inconsistent ountry names
+business_tidyorgs_path <- "tidyorgs-main\\tidyorgs-main\\data\\updated\\business_data.rda"
+business_data <- get(load(business_tidyorgs_path))
+nrow(business_data)
+
+business_data %>%
+  filter(str_detect(country, "United States of America")) %>%
+  nrow()
+
+business_data$country <- str_replace(
+  business_data$country,
+  "United States of America",
+  "United States"
+)
+
+save(business_data, file = "tidyorgs-main\\tidyorgs-main\\data\\updated\\business_data.rda")
+# NASA, Festo, Cision, Software Creations
+business_data %>%
+  filter(str_detect(organization_name, "Festo")) %>%
+  nrow()
+
+business_data %>%
+  filter(str_detect(organization_name, "Festo"))
+
+business_data <- business_data %>%
+  filter(!(organization_name == "Festo" & country == "Czech Republic"))
+
+business_data %>%
+  filter(str_detect(organization_name, "Cision")) %>%
+  nrow()
+
+business_data %>%
+  filter(str_detect(organization_name, "Cision"))
+
+business_data <- business_data %>%
+  filter(!(organization_name == "Cision" & is.na(country)))
+
+business_data %>%
+  filter(str_detect(organization_name, "Software Creations")) %>%
+  nrow()
+
+business_data %>%
+  filter(str_detect(organization_name, "Software Creations"))
+
+business_data <- business_data %>%
+  filter(!(organization_name == "Software Creations" & country == "United Kingdom"))
+
+
+save(business_data, file = "tidyorgs-main\\tidyorgs-main\\data\\updated\\business_data.rda")
+
+
+gov_tidyorgs_path <- "tidyorgs-main\\tidyorgs-main\\data\\updated\\government_data.rda"
+gov_data <- get(load(gov_tidyorgs_path))
+nrow(gov_data)
+
+
+gov_data %>%
+  filter(str_detect(organization_name, "National Aeronautics and Space Administration")) %>%
+  nrow()
+
+gov_data %>%
+  filter(str_detect(organization_name, "National Aeronautics and Space Administration"))
+
+gov_data <- gov_data %>%
+  filter(!(organization_name == "National Aeronautics and Space Administration" & is.na(country)))
+
+gov_data <- gov_data %>%
+  mutate(
+    catch_terms = if_else(
+      str_detect(organization_name, "National Aeronautics and Space Administration"),
+      paste0(catch_terms, " | nasa"),
+      catch_terms
+    )
+  )
+
+save(gov_data, file = "tidyorgs-main\\tidyorgs-main\\data\\updated\\government_data.rda")
+
+gov_tidyorgs_path <- "tidyorgs-main\\tidyorgs-main\\data\\updated\\government_data.rda"
+gov_data <- get(load(gov_tidyorgs_path))
+nrow(gov_data)
+
+
+gov_data %>%
+  filter(str_detect(organization_name, "National Aeronautics and Space Administration")) %>%
+  nrow()
+
+gov_data %>%
+  filter(str_detect(organization_name, "National Aeronautics and Space Administration"))
+
+gov_data <- gov_data %>%
+  filter(!(organization_name == "National Aeronautics and Space Administration" & is.na(country)))
+
+gov_data <- gov_data %>%
+  mutate(
+    catch_terms = if_else(
+      str_detect(organization_name, "National Aeronautics and Space Administration"),
+      paste0(catch_terms, " | nasa"),
+      catch_terms
+    )
+  )
+
+save(gov_data, file = "tidyorgs-main\\tidyorgs-main\\data\\updated\\government_data.rda")

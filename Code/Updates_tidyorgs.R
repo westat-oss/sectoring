@@ -1,24 +1,25 @@
-# Change the path 
+# install.packages("devtools")
+# install.packages("arrow")
+# install.packages("rlang")
+# install.packages("stringr")
+# install.packages("tibble")
+# install.packages("tidyverse")
+# install.packages("readxl")
+# install.packages("writexl")
+# install.packages("dplyr")
 
-install.packages("devtools")
-install.packages("arrow")
-install.packages("rlang")
-install.packages("stringr")
-install.packages("tibble")
-install.packages("tidyverse")
-install.packages("readxl")
-install.packages("writexl")
-install.packages("dplyr")
+# chnage the paths to input and outpt files here
+path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
+path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
+path_to_user_data <- 'C:\\Users\\Saluja_R\\Desktop\\Westat\\OSS\\Sectoring GH - VM\\sectoring\\Data\\user_data_2025_02_11_filtered.parquet'
+path_to_output <- "C:\\Users\\Saluja_R\\Desktop\\Westat\\OSS\\Sectoring GH - VM\\sectoring\\Data\\user_data_sectors_2025_03_31.parquet"
 
-# detach the packages before installing so we get the updated packages
+# if your current env already has these packages please detach them before running the script again (this will update the packages in your env)
+# detach("package:tidyorgs", unload = TRUE)
+# detach("package:diverstidy", unload = TRUE)
 
-detach("package:tidyorgs", unload = TRUE)
-
-devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/tidyorgs-main/tidyorgs-main", force = TRUE)
-
-detach("package:diverstidy", unload = TRUE)
-
-devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main", force = TRUE)
+devtools::install_local(path_to_tidyorgs, force = TRUE)
+devtools::install_local(path_to_diverstidy, force = TRUE)
 
 library(tidyorgs)
 library(diverstidy)
@@ -31,37 +32,64 @@ library(writexl)
 options(width = 1000)
 library(arrow)
 
-# UPDATES - INSIDE THE PACKAGE
 
-data <- read_parquet('C:\\Users\\Saluja_R\\OneDrive - Westat\\Desktop\\Westat\\OSS\\Sectoring GH\\sectoring\\Code\\user_data_2024_12_04.parquet')
+data <- read_parquet(path_to_user_data)
+nrow(data)
 
 classified_sectors <- data %>%
-  detect_academic(login, company, organization_academic, country = TRUE, email = author_email)
+  detect_academic(id = login, 
+                  input = company, 
+                  output = organization_company_academic, 
+                  output_email = organization_email_academic, 
+                  country = TRUE, 
+                  email = author_email)
 
 classified_sectors <- classified_sectors %>%
     rename(country_academic = country)
 
 classified_sectors <- classified_sectors %>%
-  detect_business(login, company, organization_business, country = TRUE, email = author_email)
+  detect_business(id = login, 
+                  input = company, 
+                  output = organization_company_business, 
+                  output_email = organization_email_business, 
+                  country = TRUE, 
+                  email = author_email)
 
 classified_sectors <- classified_sectors %>%
     rename(country_business = country)
 
 classified_sectors <- classified_sectors %>%
-  detect_government(login, company, organization_government, country = TRUE, email = author_email)
+  detect_government(id = login, 
+                    input = company, 
+                    output = organization_company_government, 
+                    output_email = organization_email_government,
+                    country = TRUE, 
+                    email = author_email)
 
 
 classified_sectors <- classified_sectors %>%
     rename(country_government = country)
 
 classified_sectors <- classified_sectors %>%
-  detect_nonprofit(login, company, organization_nonprofit, country = TRUE, email = author_email)
+  detect_nonprofit(id = login, 
+                  input = company,
+                  output = organization_company_nonprofit,
+                  output_email = organization_email_nonprofit,
+                  country = TRUE, 
+                  email = author_email)
 
 classified_sectors <- classified_sectors %>%
     rename(country_nonprofit = country)
 
-# to create a parquest file
+
+# For testing:
+# nrow(classified_sectors)
+# colnames(classified_sectors)
+# write.csv(classified_sectors, "classified_setors.csv", row.names = FALSE)
+
+# save to parquet file 
 write_parquet(classified_sectors, 
-               sink = "C:\\Users\\Saluja_R\\OneDrive - Westat\\Desktop\\Westat\\OSS\\Sectoring GH\\sectoring\\Code\\user_data_output_2024_12_04_secotorsParquet.parquet")
+               sink = path_to_output)
+
 
 

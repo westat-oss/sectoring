@@ -26,7 +26,131 @@
 #'   detect_nonprofit(login, company, organization, email, parent_org, org_type)
 #'
 #' @export
-detect_nonprofit <- function(data, id, input, output, 
+# detect_nonprofit <- function(data, id, input, output, 
+#                             email = FALSE, 
+#                             country = FALSE, 
+#                             parent_org = FALSE, 
+#                             org_type = FALSE
+#                             ){ 
+#   # 1. convert all vars with enquos
+#   id <- enquo(id)
+#   input <- enquo(input)
+#   output <- enquo(output)
+#   `%notin%` <- Negate(`%in%`)
+#   # 2. match by text entries 
+#   matched_by_text <- data %>%
+#     mutate("{{input}}" := str_replace_all(!!input, "@", ""),
+#            "{{input}}" := str_replace_all(!!input, "-", " "),
+#            "{{input}}" := tolower(!!input)) %>% 
+#     text_to_orgs(!!id, !!input, !!output, "nonprofit")
+#   sector_terms <- sector_terms %>%
+#     dplyr::filter(sector_group == "nonprofit")
+#   already_classified <- matched_by_text %>% dplyr::rename(tmp_id = !!id)
+#   already_classified <- already_classified$tmp_id
+#   sector_terms <- na.omit(sector_terms$terms)
+  
+#   if (missing(email)) {
+#     #   # 3a. match by misc. nonprofit terms
+#     matched_by_sector <- data %>%
+#       dplyr::filter(!!id %notin% already_classified) %>%
+#       tidytext::unnest_tokens(words, !!input) %>%
+#       dplyr::filter(words %in% sector_terms) %>%
+#       dplyr::mutate("{{output}}" := "Misc. Non-Profit") %>%
+#       dplyr::distinct(!!id, !!output)
+#     #   # 4a. bind all matched data together and add sector
+#     all_matched_data <- matched_by_text %>%
+#       dplyr::bind_rows(matched_by_sector) %>%
+#       dplyr::mutate(sector = 1) %>%
+#       dplyr::arrange(!!output)
+#     #   # 5a. join classified data back to the original dataframe
+#     suppressMessages(
+#       joined_data <- data %>%
+#         dplyr::left_join(all_matched_data) %>%
+#         dplyr::mutate(sector = tidyr::replace_na(sector, 0)) %>%
+#         dplyr::distinct(across(everything())) %>%
+#         dplyr::group_by(!!id, !!input, sector) %>%
+#         dplyr::mutate("{{output}}" := paste(!!output, collapse = "|")) %>%
+#         dplyr::distinct(across(everything())) %>%
+#         dplyr::mutate("{{output}}" := dplyr::na_if(!!output, "NA")) %>%
+#         dplyr::ungroup() %>% 
+#         dplyr::rename(nonprofit = sector) %>% 
+#         dplyr::rename_all(~stringr::str_replace_all(.,"\"",""))) 
+#   } else {
+#     email <- enquo(email)
+#     # 3b. match by all emails (first by orgs, then by misc)
+#     matched_by_email <- data %>%
+#       dplyr::filter(!!id %notin% already_classified) %>%
+#       email_to_sectors(!!id, !!email, !!output, "nonprofit") %>%
+#       filter(!!output != "NA")
+#   }
+#   newly_classified <- matched_by_email %>% dplyr::rename(tmp_id = !!id)
+#   newly_classified <- newly_classified$tmp_id
+#   already_classified <- c(already_classified, newly_classified)
+#   # 4b. match by misc. nonprofit terms
+#   matched_by_sector <- data %>%
+#     mutate("{{input}}" := str_replace_all(!!input, "@", ""),
+#            "{{input}}" := str_replace_all(!!input, "-", " "),
+#            "{{input}}" := tolower(!!input)) %>% 
+#     dplyr::filter(!!id %notin% already_classified & 
+#                   !grepl("ai foundation|egi foundation|dwarves foundation|foundation medicine|national science foundation|avail foundation", !!input)) %>%
+#     tidytext::unnest_tokens(words, !!input) %>%
+#     dplyr::filter(words %in% sector_terms) %>%
+#     dplyr::mutate("{{output}}" := "Misc. Non-Profit") %>%
+#     dplyr::distinct(!!id, !!output)
+#   # 5b. bind all matched data together and add sector
+#   all_matched_data <- matched_by_text %>%
+#     dplyr::bind_rows(matched_by_sector) %>%
+#     dplyr::mutate(sector = 1) %>%
+#     dplyr::bind_rows(matched_by_email) %>%
+#     dplyr::arrange(!!output)
+#   # 6b. join classified data back to the original dataframe
+#   suppressMessages(
+#     joined_data <- data %>%
+#       dplyr::left_join(all_matched_data) %>%
+#       dplyr::mutate(sector = tidyr::replace_na(sector, 0)) %>%
+#       dplyr::distinct(across(everything())) %>%
+#       dplyr::group_by(!!id, !!input, !!email, sector) %>%
+#       dplyr::mutate("{{output}}" := paste(!!output, collapse = "|")) %>%
+#       dplyr::distinct(across(everything())) %>%
+#       dplyr::mutate("{{output}}" := dplyr::na_if(!!output, "NA")) %>%
+#       dplyr::ungroup() %>%
+#       dplyr::rename(nonprofit = sector) %>%
+#       dplyr::rename_all(~stringr::str_replace_all(.,"\"",""))
+#   )
+#   # # adding basic covariates for nonprofit sector
+#   suppressMessages(
+#     if(country == TRUE || parent_org == TRUE || org_type == TRUE){
+#       #academic_institutions <- tidyorgs::academic_institutions %>%
+#       nonprofit_data <- nonprofit_data %>%
+#         dplyr::mutate("{{output}}" := organization_name) %>%
+#         dplyr::select(!!output, country, parent_org, org_type)
+      
+#       if(country == TRUE && parent_org == TRUE && org_type == TRUE){ # TTT
+#         joined_data <- joined_data %>% dplyr::left_join(nonprofit_data)
+#       } else if(country == FALSE && parent_org == TRUE && org_type == TRUE){ # FTT
+#         joined_data <- joined_data %>% dplyr::left_join(nonprofit_data %>%
+#                         dplyr::select(!!output, parent_org, org_type))
+#       } else if(country == TRUE && parent_org == FALSE && org_type == TRUE){ # TFT
+#         joined_data <- joined_data %>% dplyr::left_join(nonprofit_data %>%
+#                         dplyr::select(!!output, country, org_type))
+#       } else if(country == TRUE && parent_org == TRUE && org_type == FALSE){ # TTF
+#         joined_data <- joined_data %>% dplyr::left_join(nonprofit_data %>%
+#                         dplyr::select(!!output, country, parent_org))
+#       } else if(country == TRUE && parent_org == FALSE && org_type == FALSE){ # TFF
+#         joined_data <- joined_data %>% dplyr::left_join(nonprofit_data %>%
+#                         dplyr::select(!!output, country))
+#       } else if(country == FALSE && parent_org == FALSE && org_type == TRUE){ # FFT
+#         joined_data <- joined_data %>% dplyr::left_join(nonprofit_data %>%
+#                         dplyr::select(!!output, parent_org))
+#       } else if(country == FALSE && parent_org == TRUE && org_type == FALSE){ # FTF
+#         joined_data <- joined_data %>% dplyr::left_join(nonprofit_data %>%
+#                         dplyr::select(!!output, parent_org))
+#       } else { joined_data }
+#     } else { joined_data }
+#   )
+# }
+
+detect_nonprofit <- function(data, id, input, output, output_email,
                             email = FALSE, 
                             country = FALSE, 
                             parent_org = FALSE, 
@@ -36,6 +160,7 @@ detect_nonprofit <- function(data, id, input, output,
   id <- enquo(id)
   input <- enquo(input)
   output <- enquo(output)
+  output_email <- enquo(output_email) 
   `%notin%` <- Negate(`%in%`)
   # 2. match by text entries 
   matched_by_text <- data %>%
@@ -66,7 +191,7 @@ detect_nonprofit <- function(data, id, input, output,
     suppressMessages(
       joined_data <- data %>%
         dplyr::left_join(all_matched_data) %>%
-        dplyr::mutate(sector = tidyr::replace_na(sector, 0)) %>%
+        dplyr::mutate(sector = tidyr::replace_na(sector, 0), !!output_email := NA) %>% 
         dplyr::distinct(across(everything())) %>%
         dplyr::group_by(!!id, !!input, sector) %>%
         dplyr::mutate("{{output}}" := paste(!!output, collapse = "|")) %>%
@@ -80,9 +205,9 @@ detect_nonprofit <- function(data, id, input, output,
     # 3b. match by all emails (first by orgs, then by misc)
     matched_by_email <- data %>%
       dplyr::filter(!!id %notin% already_classified) %>%
-      email_to_sectors(!!id, !!email, !!output, "nonprofit") %>%
-      filter(!!output != "NA")
-  }
+      email_to_sectors(!!id, !!email, !!output_email, "nonprofit") %>%
+      filter(!!output_email != "NA")
+  
   newly_classified <- matched_by_email %>% dplyr::rename(tmp_id = !!id)
   newly_classified <- newly_classified$tmp_id
   already_classified <- c(already_classified, newly_classified)
@@ -107,16 +232,21 @@ detect_nonprofit <- function(data, id, input, output,
   suppressMessages(
     joined_data <- data %>%
       dplyr::left_join(all_matched_data) %>%
-      dplyr::mutate(sector = tidyr::replace_na(sector, 0)) %>%
+      dplyr::mutate(sector = tidyr::replace_na(sector, 0),
+          !!output := ifelse(!is.na(!!output), !!output, NA),
+          !!output_email := ifelse(!is.na(!!output_email), !!output_email, NA)) %>%
       dplyr::distinct(across(everything())) %>%
       dplyr::group_by(!!id, !!input, !!email, sector) %>%
       dplyr::mutate("{{output}}" := paste(!!output, collapse = "|")) %>%
+      dplyr::mutate("{{output_email}}" := paste(!!output_email, collapse = "|")) %>%
       dplyr::distinct(across(everything())) %>%
-      dplyr::mutate("{{output}}" := dplyr::na_if(!!output, "NA")) %>%
+      dplyr::mutate("{{output}}" := dplyr::na_if(!!output, "NA"),
+          "{{output_email}}" := dplyr::na_if(!!output_email, "NA")) %>%
       dplyr::ungroup() %>%
       dplyr::rename(nonprofit = sector) %>%
       dplyr::rename_all(~stringr::str_replace_all(.,"\"",""))
   )
+  }
   # # adding basic covariates for nonprofit sector
   suppressMessages(
     if(country == TRUE || parent_org == TRUE || org_type == TRUE){
@@ -148,4 +278,5 @@ detect_nonprofit <- function(data, id, input, output,
       } else { joined_data }
     } else { joined_data }
   )
+  return(joined_data)
 }

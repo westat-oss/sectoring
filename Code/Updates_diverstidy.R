@@ -1,27 +1,39 @@
 
 # skip if you have already installed the packages in updates_tidyorgs.R
-install.packages("devtools")
-install.packages("arrow")
-install.packages("rlang")
-install.packages("stringr")
-install.packages("tibble")
-install.packages("tidyverse")
-install.packages("readxl")
-install.packages("writexl")
-install.packages("dplyr")
 
-# Update the package path 
-# make sure to install tidyorgs first as it a dependency for diverstidy
+# install.packages("devtools")
+# install.packages('jsonlite')
+# install.packages("arrow")
+# install.packages("rlang")
+# install.packages("stringr")
+# install.packages("tibble")
+# install.packages("tidyverse")
+# install.packages("readxl")
+# install.packages("writexl")
+# install.packages("dplyr")
+# install.packages('shiny')
+# install.packages('progress')
 
+
+# NOTE: If you have already installed the packages from your local directory in the environment you need to detach them using 
+# the following lines to re-install them. This issue will only occue if you are running the program twice in the same evironment 
+# after updating the packages.
 
 # detach("package:diverstidy", unload = TRUE)
 # detach("package:tidyorgs", unload = TRUE)
 
 
-devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/tidyorgs-main/tidyorgs-main", force = TRUE)
-devtools::install_local("C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main", force = TRUE)
+# updates paths
+path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
+path_to divertidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
+path_to_user_data <- "Data/test_usr_codegov.parquet"
+path_to_partitioned_output <- "Code/Partitioned_Output"
 
+# note: please make sure to install tidyorgs first as it a dependency for diverstidy
+devtools::install_local(path_to_tidyorgs, force = TRUE)
+devtools::install_local(path_to_diverstidy, force = TRUE)
 
+library(devtools)
 library(tidyorgs)
 library(diverstidy)
 library(tibble)
@@ -38,7 +50,7 @@ library(progress)
 # ------------------LOADING THE DATA------------------
 
 # Load the file and check column names
-data_path <- "C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main/data/countries_data.rda"
+data_path <- "diverstidy-main/diverstidy-main/data/countries_data.rda"
 load(data_path)
 
 # ------------------CHANGES TO THE DATA------------------
@@ -74,29 +86,22 @@ if (length(row_index) > 0) {  # Ensure the country exists in the dataset
   countries_data$recode_countries[row_index] <- gsub("\\(\\?!new \\)", "", countries_data$recode_countries[row_index])
 }
 
-# save(countries_data, file = "C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/diverstidy-main/diverstidy-main/data/countries_data.rda")
 
 
-# For Jeremy: UPDATE PATH TO USER DATA HERE
-data <- read_parquet('C:\\Users\\Saluja_R\\OneDrive - Westat\\Desktop\\Westat\\OSS\\Sectoring GH\\sectoring\\Code\\user_data_2025_02_11_filtered.parquet')
+#-------------------------USER DATA-------------------------------------
 
-#  Re-encode columns that may contain problematic characters   - For Jeremy: THIS WILL TAKE TIME
+data <- read_parquet(path_to_user_data)
+
+#  Re-encode columns that may contain problematic characters   
 filtered_data <- data %>%
   mutate(across(everything(), ~ enc2utf8(as.character(.)))) 
 
-
-# classified_by_countries <- filtered_data %>% 
-  # detect_geographies(login, input = c("location", "bio", "socialaccounts"), email = "author_email")
-filtered_data <- data
-# Define parameters
-# colnames(classified_by_countries)
-
 total_rows <- nrow(filtered_data)
-num_parts <- 100  # Split data into 100 parts            # For Jeremy: You can change this number to adjust the number of parts
+num_parts <- 100  # Split data into 100 parts           
 rows_per_part <- ceiling(total_rows / num_parts)  # Rows in each part
 
-# Define base output directory      # For Jeremy: UPDATE THE OUTPUT DIRECTORY HERE
-output_base_dir <- "C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/Code/Partitioned_Output_2_26"
+# Define base output directory      
+output_base_dir <- path_to_partitioned_output
 
 # Create output directory if it doesn't exist
 if (!dir.exists(output_base_dir)) {
@@ -104,14 +109,15 @@ if (!dir.exists(output_base_dir)) {
 }
 
 # Set the part number from which to resume processing
-resume_from_part <- 1  # For Jeremy: Change this to the part you want to resume from - if running for the first time set to 1
+resume_from_part <- 1  # Change this to the part you want to resume from - if running for the first time set to 1
 
-# progress bar
+# initialize progress bar
 pb <- progress_bar$new(
   format = "Processing Part :current / :total [:bar] :percent (:elapsed secs)",
   total = num_parts - resume_from_part + 1, clear = FALSE, width = 60
 )
 
+# iterate over each part
 for (part_num in resume_from_part:num_parts) {
   start_idx <- ((part_num - 1) * rows_per_part) + 1
   end_idx <- min(part_num * rows_per_part, total_rows)
@@ -160,9 +166,6 @@ cat("\nAll remaining parts processed and saved successfully!\n")
 
 # Combine all batch results into one final dataframe
 
-# Define the base directory where partitioned files are stored --For Jeremy: CHANGE THE OUTPUT DIRECTORY ABOVE
-output_base_dir <- "C:/Users/Saluja_R/OneDrive - Westat/Desktop/Westat/OSS/Sectoring GH/sectoring/Code/Partitioned_Output"
-
 # List all Parquet files from all parts
 parquet_files <- list.files(output_base_dir, pattern = "\\.parquet$", recursive = TRUE, full.names = TRUE)
 
@@ -181,4 +184,6 @@ merged_output_file <- file.path(output_base_dir, "user_data_combined.parquet")
 write_parquet(combined_data, sink = merged_output_file)
 
 cat(sprintf("\nMerged %d files into %s\n", length(parquet_files), merged_output_file))
+
+
 

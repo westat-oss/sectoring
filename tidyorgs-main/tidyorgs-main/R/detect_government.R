@@ -28,7 +28,7 @@
 #'   detect_government(login, company, organization, email, parent_org, org_type)
 #'
 #' @export
-detect_government <- function(data, id, input, output, 
+detect_government <- function(data, id, input, output, output_email,
                             email = FALSE, 
                             country = FALSE, 
                             parent_org = FALSE, 
@@ -37,6 +37,8 @@ detect_government <- function(data, id, input, output,
   id <- enquo(id)
   input <- enquo(input)
   output <- enquo(output)
+  output_email <- enquo(output_email)
+
   `%notin%` <- Negate(`%in%`)
   # 2. match by text entries 
   matched_by_text <- data %>%
@@ -64,7 +66,7 @@ detect_government <- function(data, id, input, output,
     suppressMessages(
       joined_data <- data %>%
         dplyr::left_join(all_matched_data) %>%
-        dplyr::mutate(sector = tidyr::replace_na(sector, 0)) %>%
+        dplyr::mutate(sector = tidyr::replace_na(sector, 0), !!output_email := NA) %>%
         dplyr::distinct(across(everything())) %>%
         dplyr::group_by(!!id, !!input, sector) %>%
         dplyr::mutate("{{output}}" := paste(!!output, collapse = "|")) %>%
@@ -78,9 +80,9 @@ detect_government <- function(data, id, input, output,
     # 3b. match by all emails (first by orgs, then by misc)
     matched_by_email <- data %>%
       dplyr::filter(!!id %notin% already_classified) %>%
-      email_to_sectors(!!id, !!email, !!output, "government") %>%
-      filter(!!output != "NA")
-  }
+      email_to_sectors(!!id, !!email, !!output_email, "government") %>%
+      filter(!!output_email != "NA")
+  
   newly_classified <- matched_by_email %>% dplyr::rename(tmp_id = !!id)
   newly_classified <- newly_classified$tmp_id
   already_classified <- c(already_classified, newly_classified)
@@ -101,16 +103,21 @@ detect_government <- function(data, id, input, output,
   suppressMessages(
     joined_data <- data %>%
       dplyr::left_join(all_matched_data) %>%
-      dplyr::mutate(sector = tidyr::replace_na(sector, 0)) %>%
+      dplyr::mutate(sector = tidyr::replace_na(sector, 0),
+          !!output := ifelse(!is.na(!!output), !!output, NA),
+          !!output_email := ifelse(!is.na(!!output_email), !!output_email, NA)) %>%
       dplyr::distinct(across(everything())) %>%
       dplyr::group_by(!!id, !!input, !!email, sector) %>%
       dplyr::mutate("{{output}}" := paste(!!output, collapse = "|")) %>%
+      dplyr::mutate("{{output_email}}" := paste(!!output_email, collapse = "|")) %>%
       dplyr::distinct(across(everything())) %>%
-      dplyr::mutate("{{output}}" := dplyr::na_if(!!output, "NA")) %>%
+      dplyr::mutate("{{output}}" := dplyr::na_if(!!output, "NA"),
+          "{{output_email}}" := dplyr::na_if(!!output_email, "NA")) %>%
       dplyr::ungroup() %>%
       dplyr::rename(government = sector) %>%
       dplyr::rename_all(~stringr::str_replace_all(.,"\"",""))
   )
+  }
   # # adding basic covariates for government sector
   suppressMessages(
     if(country == TRUE || parent_org == TRUE || org_type == TRUE){
@@ -154,4 +161,5 @@ detect_government <- function(data, id, input, output,
       } else { joined_data }
     } else { joined_data }
   )
+  return(joined_data)
 }
