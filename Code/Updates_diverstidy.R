@@ -22,10 +22,10 @@
 # detach("package:diverstidy", unload = TRUE)
 # detach("package:tidyorgs", unload = TRUE)
 
-
+C:\Users\Saluja_R\Desktop\Westat\OSS\Sectoring GH - VM\sectoring\diverstidy-main
 # updates paths
 path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
-path_to divertidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
+path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
 path_to_user_data <- "Data/test_usr_codegov.parquet"
 path_to_partitioned_output <- "Code/Partitioned_Output"
 
