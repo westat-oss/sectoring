@@ -9,10 +9,10 @@
 # install.packages("dplyr")
 
 # chnage the paths to input and outpt files here
-path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
-path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
-path_to_user_data <- 'C:\\Users\\Saluja_R\\Desktop\\Westat\\OSS\\Sectoring GH - VM\\sectoring\\Data\\user_data_2025_02_11_filtered.parquet'
-path_to_output <- "C:\\Users\\Saluja_R\\Desktop\\Westat\\OSS\\Sectoring GH - VM\\sectoring\\Data\\user_data_sectors_2025_03_31.parquet"
+path_to_tidyorgs           <- "tidyorgs-main/tidyorgs-main"
+path_to_diverstidy         <- "diverstidy-main/diverstidy-main"
+path_to_user_data          <- "Data/user_data_2025_02_11.parquet"
+path_to_output             <- "Data/user_data_sectors_2025_03_31.parquet"
 
 # if your current env already has these packages please detach them before running the script again (this will update the packages in your env)
 # detach("package:tidyorgs", unload = TRUE)

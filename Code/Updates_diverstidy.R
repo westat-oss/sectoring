@@ -24,9 +24,9 @@
 
 C:\Users\Saluja_R\Desktop\Westat\OSS\Sectoring GH - VM\sectoring\diverstidy-main
 # updates paths
-path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
-path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
-path_to_user_data <- "Data/test_usr_codegov.parquet"
+path_to_tidyorgs           <- "tidyorgs-main/tidyorgs-main"
+path_to_diverstidy         <- "diverstidy-main/diverstidy-main"
+path_to_user_data          <- "Data/user_data_2025_02_11.parquet"
 path_to_partitioned_output <- "Code/Partitioned_Output"
 
 # note: please make sure to install tidyorgs first as it a dependency for diverstidy
