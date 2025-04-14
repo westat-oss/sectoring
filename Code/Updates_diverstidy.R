@@ -22,7 +22,6 @@
 # detach("package:diverstidy", unload = TRUE)
 # detach("package:tidyorgs", unload = TRUE)
 
-C:\Users\Saluja_R\Desktop\Westat\OSS\Sectoring GH - VM\sectoring\diverstidy-main
 # updates paths
 path_to_tidyorgs           <- "tidyorgs-main/tidyorgs-main"
 path_to_diverstidy         <- "diverstidy-main/diverstidy-main"
