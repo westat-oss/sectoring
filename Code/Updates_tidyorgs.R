@@ -14,13 +14,6 @@ path_to_diverstidy         <- "diverstidy-main/diverstidy-main"
 path_to_user_data          <- "Data/user_data_2025_02_11.parquet"
 path_to_output             <- "Data/user_data_sectors_2025_03_31.parquet"
 
-# if your current env already has these packages please detach them before running the script again (this will update the packages in your env)
-# detach("package:tidyorgs", unload = TRUE)
-# detach("package:diverstidy", unload = TRUE)
-
-devtools::install_local(path_to_tidyorgs, force = TRUE)
-devtools::install_local(path_to_diverstidy, force = TRUE)
-
 library(tidyorgs)
 library(diverstidy)
 library(tibble)

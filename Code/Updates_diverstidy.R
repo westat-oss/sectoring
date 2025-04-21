@@ -29,8 +29,6 @@ path_to_user_data          <- "Data/user_data_2025_02_11.parquet"
 path_to_partitioned_output <- "Code/Partitioned_Output"
 
 # note: please make sure to install tidyorgs first as it a dependency for diverstidy
-devtools::install_local(path_to_tidyorgs, force = TRUE)
-devtools::install_local(path_to_diverstidy, force = TRUE)
 
 library(devtools)
 library(tidyorgs)
