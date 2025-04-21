@@ -26,7 +26,7 @@
 path_to_tidyorgs           <- "tidyorgs-main/tidyorgs-main"
 path_to_diverstidy         <- "diverstidy-main/diverstidy-main"
 path_to_user_data          <- "Data/user_data_2025_02_11.parquet"
-path_to_partitioned_output <- "Code/Partitioned_Output"
+path_to_partitioned_output <- "Data/Partitioned_Output"
 
 # note: please make sure to install tidyorgs first as it a dependency for diverstidy
 
