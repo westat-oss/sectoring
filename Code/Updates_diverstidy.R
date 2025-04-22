@@ -15,23 +15,16 @@
 # install.packages('progress')
 
 
-# NOTE: If you have already installed the packages from your local directory in the environment you need to detach them using 
-# the following lines to re-install them. This issue will only occue if you are running the program twice in the same evironment 
-# after updating the packages.
 
-# detach("package:diverstidy", unload = TRUE)
-# detach("package:tidyorgs", unload = TRUE)
 
-C:\Users\Saluja_R\Desktop\Westat\OSS\Sectoring GH - VM\sectoring\diverstidy-main
+
 # updates paths
 path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
 path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
 path_to_user_data <- "Data/test_usr_codegov.parquet"
 path_to_partitioned_output <- "Code/Partitioned_Output"
 
-# note: please make sure to install tidyorgs first as it a dependency for diverstidy
-devtools::install_local(path_to_tidyorgs, force = TRUE)
-devtools::install_local(path_to_diverstidy, force = TRUE)
+
 
 library(devtools)
 library(tidyorgs)

@@ -14,12 +14,7 @@ path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sect
 path_to_user_data <- 'C:\\Users\\Saluja_R\\Desktop\\Westat\\OSS\\Sectoring GH - VM\\sectoring\\Data\\user_data_2025_02_11_filtered.parquet'
 path_to_output <- "C:\\Users\\Saluja_R\\Desktop\\Westat\\OSS\\Sectoring GH - VM\\sectoring\\Data\\user_data_sectors_2025_03_31.parquet"
 
-# if your current env already has these packages please detach them before running the script again (this will update the packages in your env)
-# detach("package:tidyorgs", unload = TRUE)
-# detach("package:diverstidy", unload = TRUE)
 
-devtools::install_local(path_to_tidyorgs, force = TRUE)
-devtools::install_local(path_to_diverstidy, force = TRUE)
 
 library(tidyorgs)
 library(diverstidy)
