@@ -1,1 +1,2 @@
 Data/*.parquet
+Data/**/*.parquet
