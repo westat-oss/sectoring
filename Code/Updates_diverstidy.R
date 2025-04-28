@@ -1,34 +1,6 @@
+# Specify display options, load necessary packages ----
 
-# skip if you have already installed the packages in updates_tidyorgs.R
-
-# install.packages("devtools")
-# install.packages('jsonlite')
-# install.packages("arrow")
-# install.packages("rlang")
-# install.packages("stringr")
-# install.packages("tibble")
-# install.packages("tidyverse")
-# install.packages("readxl")
-# install.packages("writexl")
-# install.packages("dplyr")
-# install.packages('shiny')
-# install.packages('progress')
-
-
-# NOTE: If you have already installed the packages from your local directory in the environment you need to detach them using 
-# the following lines to re-install them. This issue will only occue if you are running the program twice in the same evironment 
-# after updating the packages.
-
-# detach("package:diverstidy", unload = TRUE)
-# detach("package:tidyorgs", unload = TRUE)
-
-# updates paths
-path_to_tidyorgs           <- "tidyorgs-main/tidyorgs-main"
-path_to_diverstidy         <- "diverstidy-main/diverstidy-main"
-path_to_user_data          <- "Data/user_data_2025_02_11.parquet"
-path_to_partitioned_output <- "Data/Partitioned_Output"
-
-# note: please make sure to install tidyorgs first as it a dependency for diverstidy
+options(width = 1000)
 
 library(devtools)
 library(tidyorgs)
@@ -40,9 +12,14 @@ library(stringr)
 library(tidyverse)
 library(readxl)
 library(writexl)
-options(width = 1000)
 library(arrow)
 library(progress)
+
+# Specify relevant paths for data
+
+path_to_user_data          <- "Data/user_data_2025_02_11.parquet"
+path_to_partitioned_output <- "Data/Partitioned_Output"
+
 
 # ------------------LOADING THE DATA------------------
 
