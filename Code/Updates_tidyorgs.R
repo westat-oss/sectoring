@@ -1,20 +1,6 @@
-# install.packages("devtools")
-# install.packages("arrow")
-# install.packages("rlang")
-# install.packages("stringr")
-# install.packages("tibble")
-# install.packages("tidyverse")
-# install.packages("readxl")
-# install.packages("writexl")
-# install.packages("dplyr")
+# Specify display options, load necessary packages ----
 
-# chnage the paths to input and outpt files here
-path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
-path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
-path_to_user_data <- 'C:\\Users\\Saluja_R\\Desktop\\Westat\\OSS\\Sectoring GH - VM\\sectoring\\Data\\user_data_2025_02_11_filtered.parquet'
-path_to_output <- "C:\\Users\\Saluja_R\\Desktop\\Westat\\OSS\\Sectoring GH - VM\\sectoring\\Data\\user_data_sectors_2025_03_31.parquet"
-
-
+options(width = 1000)
 
 library(tidyorgs)
 library(diverstidy)
@@ -24,12 +10,21 @@ library(rlang)
 library(tidyverse)
 library(readxl)
 library(writexl)
-options(width = 1000)
 library(arrow)
 
+# Specify relevant paths for data ----
+
+path_to_user_data <- "Data/user_data_2025_02_11.parquet"
+path_to_output    <- "Data/user_data_sectors_2025_03_31.parquet"
+
+# Load user data ----
 
 data <- read_parquet(path_to_user_data)
 nrow(data)
+
+# Run sectoring functions from tidyorgs ----
+
+## Academic
 
 classified_sectors <- data %>%
   detect_academic(id = login, 
@@ -42,6 +37,8 @@ classified_sectors <- data %>%
 classified_sectors <- classified_sectors %>%
     rename(country_academic = country)
 
+# Business
+
 classified_sectors <- classified_sectors %>%
   detect_business(id = login, 
                   input = company, 
@@ -53,6 +50,8 @@ classified_sectors <- classified_sectors %>%
 classified_sectors <- classified_sectors %>%
     rename(country_business = country)
 
+## Government
+
 classified_sectors <- classified_sectors %>%
   detect_government(id = login, 
                     input = company, 
@@ -61,9 +60,10 @@ classified_sectors <- classified_sectors %>%
                     country = TRUE, 
                     email = author_email)
 
-
 classified_sectors <- classified_sectors %>%
     rename(country_government = country)
+
+## Nonprofit
 
 classified_sectors <- classified_sectors %>%
   detect_nonprofit(id = login, 
@@ -76,15 +76,6 @@ classified_sectors <- classified_sectors %>%
 classified_sectors <- classified_sectors %>%
     rename(country_nonprofit = country)
 
+# Save output data to parquet file ----
 
-# For testing:
-# nrow(classified_sectors)
-# colnames(classified_sectors)
-# write.csv(classified_sectors, "classified_setors.csv", row.names = FALSE)
-
-# save to parquet file 
-write_parquet(classified_sectors, 
-               sink = path_to_output)
-
-
-
+write_parquet(classified_sectors, sink = path_to_output)
