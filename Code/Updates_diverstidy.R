@@ -47,8 +47,7 @@ library(progress)
 # ------------------LOADING THE DATA------------------
 
 # Load the file and check column names
-data_path <- "diverstidy-main/diverstidy-main/data/countries_data.rda"
-load(data_path)
+data('countries_data', package = 'diverstidy')
 
 # ------------------CHANGES TO THE DATA------------------
 
