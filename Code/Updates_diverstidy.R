@@ -21,8 +21,8 @@
 # updates paths
 path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
 path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
-path_to_user_data <- "Data/test_usr_codegov.parquet"
-path_to_partitioned_output <- "Code/Partitioned_Output"
+path_to_user_data <- "Output/user_data_sectors_2025_10_08.parquet"
+path_to_partitioned_output <- "Output/10_08_2025"
 
 
 
@@ -43,7 +43,7 @@ library(progress)
 # ------------------LOADING THE DATA------------------
 
 # Load the file and check column names
-data_path <- "diverstidy-main/diverstidy-main/data/countries_data.rda"
+data_path <- "diverstidy/data/countries_data.rda"
 load(data_path)
 
 # ------------------CHANGES TO THE DATA------------------
