@@ -10,7 +10,7 @@ library(arrow)
 
 
 # Specify path to input and output data here
-path_to_user_data <- 'Data\\'
+path_to_user_data <- 'Output\\10_08_2025\\user_data_combined.parquet'
 path_to_sector_output <- 'Data\\'
 path_to_country_output <- 'Data\\'
 path_to_output <- 'Data\\'
@@ -21,55 +21,56 @@ path_to_output <- 'Data\\'
 
 data_user <- read_parquet(path_to_user_data)
 sum(duplicated(data_user$login)) # 0 - that means no duplicate logins
-nrow(data_user) # total number of users - 5930379
+nrow(data_user) # total number of users 
 
 
 #--------------------------------------------------------------------
 # Checking total number of rows and duplicate values in sectoring data
 #--------------------------------------------------------------------
-data_sector <- read_parquet(path_to_sector_output)
-sum(duplicated(data_sector$login)) 
-nrow(data_sector)
+# data_sector <- read_parquet(path_to_sector_output)
+# sum(duplicated(data_sector$login)) 
+# nrow(data_sector)
 
 # If duplicate values exist in sector output
 
 # Creating file with duplicate values to manually inspect
-duplicated_logins_sector <- data_sector %>%
-  filter(duplicated(login) | login %in% login[duplicated(login)])
+# duplicated_logins_sector <- data_sector %>%
+#   filter(duplicated(login) | login %in% login[duplicated(login)])
 
-write.csv(duplicated_logins_sector, "duplicated_logins_inSectorFile.csv", row.names = FALSE)
+# write.csv(duplicated_logins_sector, "duplicated_logins_inSectorFile.csv", row.names = FALSE)
 
 # Count missing values and filter rows with the least missing values per login
-data_sector$missing_count <- rowSums(is.na(data_sector))
+data_user$missing_count <- rowSums(is.na(data_user))
 
 # Order by login, missing_count (ascending)
-data_sector <- data_sector[order(data_sector$login, data_sector$missing_count), ]
+data_user <- data_user[order(data_user$login, data_user$missing_count), ]
 
 # Remove duplicates while keeping the first occurrence (least missing values or 'Germany' priority)
-data_sector_unique <- data_sector[!duplicated(data_sector$login), ]
+data_user_unique <- data_user[!duplicated(data_user$login), ]
 
 # Drop the extra column
-data_sector_unique$missing_count <- NULL
+data_user_unique$missing_count <- NULL
 
 #--------------------------------------------------------------------
 # Checking total number of rows and duplicate values in country data
 #--------------------------------------------------------------------
-data_country <- read_parquet(path_to_country_output)
-sum(duplicated(data_country$login))
-nrow(data_country)
+# data_country <- read_parquet(path_to_country_output)
+# sum(duplicated(data_country$login))
+# nrow(data_country)
 
 # If duplicate data exists in country output 
 
 # Creating file with duplicate values to manually inspect
-duplicated_logins_country <- data_country %>%
-  filter(duplicated(login) | login %in% login[duplicated(login)])
+# duplicated_logins_country <- data_country %>%
+#   filter(duplicated(login) | login %in% login[duplicated(login)])
 
-write.csv(duplicated_logins_country, "duplicated_logins_inCountryFile.csv", row.names = FALSE)
+# write.csv(duplicated_logins_country, "duplicated_logins_inCountryFile.csv", row.names = FALSE)
 
 # Collapsing country columns -- as some user might have been assigned two countries and therefore are appearing as duplicate logins
 
+colnames(data_user_unique)
 # Step 1: Collapse country columns
-country_collapsed <- data_country %>%
+country_collapsed <- data_user_unique %>%
   group_by(login) %>%
   summarise(
     country_email = str_c(unique(na.omit(country_email)), collapse = " | "),
@@ -80,16 +81,18 @@ country_collapsed <- data_country %>%
   )
 
 # Step 2: Select one representative row per login from original data (e.g., first row)
-non_country_columns <- data_country %>%
+non_country_columns <- data_user_unique %>%
   group_by(login) %>%
   slice(1) %>%
   select(-country_email, -country_bio, -country_location, -country_socialaccounts)
 
 # Step 3: Join the collapsed country columns back
-data_country_unique <- data_country %>%
+data_user_unique_updated <- data_user_unique %>%
+  # drop the old (uncollapsed) versions before joining
+  select(-country_email, -country_bio, -country_location, -country_socialaccounts) %>%
   left_join(country_collapsed, by = "login")
 
-sum(duplicated(data_country_unique$login)) # check 
+sum(duplicated(data_user_unique_updated$login)) # check 
 
 
 #--------------------------------------------------------------------
@@ -103,26 +106,26 @@ columns_to_check <- c("organization_company_academic", "academic", "country_acad
                       "organization_company_nonprofit", "nonprofit", "country_nonprofit", "organization_email_nonprofit")
 
 
-na_pipe_rows <- data_sector_unique %>%
+na_pipe_rows <- data_user_unique_updated %>%
   filter(if_any(all_of(columns_to_check), ~ . == "NA|NA"))
 
-# nrow(na_pipe_rows)
+nrow(na_pipe_rows)
 
-data_sector_unique <- data_sector_unique %>%
+data_user_unique_updated <- data_user_unique_updated %>%
   mutate(across(all_of(columns_to_check), ~ ifelse(. == "NA|NA", NA, .)))
 
-na_pipe_rows_triple <- data_sector_unique %>%
+na_pipe_rows_triple <- data_user_unique_updated %>%
   filter(if_any(all_of(columns_to_check), ~ . == "NA|NA|NA"))
 
-# nrow(na_pipe_rows_triple) 
+nrow(na_pipe_rows_triple) 
 
-data_sector_unique <- data_sector_unique %>%
+data_user_unique_updated <- data_user_unique_updated %>%
   mutate(across(all_of(columns_to_check), ~ ifelse(. == "NA|NA|NA", NA, .)))
 
 # Adding condition for GitHub employees 
-data_sector_unique <- data_sector_unique %>%
+data_user_unique_updated <- data_user_unique_updated %>%
   mutate(
-    business = if_else(isemployee == TRUE, 1, business),
+    business = if_else(isemployee == TRUE, "1", business),
     organization_company_business = if_else(isemployee == TRUE, "GitHub", organization_company_business),
     country_business = if_else(isemployee == TRUE, "United States", country_business)
   )
@@ -150,7 +153,7 @@ state_codes <- c("al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi
                  "wv", "wi", "wy", "nyc", "dc", "sf")
 
 # PROCESS 1: If the last two letters correspond to state abbreviation - then US
-data_country_unique <- data_country_unique %>%
+data_user_unique_updated <- data_user_unique_updated %>%
   mutate(location = tolower(location), # Ensure lowercase for comparison
          country_location = case_when(
            !is.na(location) & location != "nothing" &  # location should not be null or nothing
@@ -163,7 +166,7 @@ data_country_unique <- data_country_unique %>%
 columns_to_modify <- c("country_location", "country_bio", "country_socialaccounts", "country_email")
 
 
-data_country_unique <- data_country_unique %>%
+data_user_unique_updated <- data_user_unique_updated %>%
   mutate(across(all_of(columns_to_modify), ~ if_else(
     str_count(., "\\|") == 1 & str_detect(., "NA"),
     str_replace_all(., "\\|?NA\\|?", ""),  # Step 1: Remove single "NA" and "|"
@@ -177,7 +180,7 @@ data_country_unique <- data_country_unique %>%
 
 
 # PROCESS 3: If the location is New Jersey then it is United States and not Jersey
-data_country_unique <- data_country_unique %>%
+data_user_unique_updated <- data_user_unique_updated %>%
     mutate(
             country_location = if_else(
             str_detect(tolower(location), "new jersey"),
@@ -187,7 +190,7 @@ data_country_unique <- data_country_unique %>%
     )
 
 # PROCESS 4: If the location is New Mexico then it is United States and not Mexico
-data_country_unique <- data_country_unique %>%
+data_user_unique_updated <- data_user_unique_updated %>%
     mutate(
             country_location = if_else(
             str_detect(tolower(location), "new mexico"),
@@ -197,7 +200,7 @@ data_country_unique <- data_country_unique %>%
     )
   
 # PROCESS 5: Making sure US has a consistent name throughout 
-data_country_unique <- data_country_unique %>%
+data_user_unique_updated <- data_user_unique_updated %>%
     mutate(
             country_location = if_else(
             str_detect(tolower(location), " usa"),
@@ -210,6 +213,33 @@ data_country_unique <- data_country_unique %>%
 # write_parquet(data_country_unique, sink = 'Code\\user_data_country_2025_04_09_codegov_country.parquet')
 
 # data_country_unique <- read_parquet('Data\\user_data_country_2025_03_04.parquet')
+colnames(data_user_unique_updated)
+nrow(data_user_unique_updated)
+sum(duplicated(data_user_unique_updated$login))
+
+country_cols <- grep("^country_", names(data_user_unique_updated), value = TRUE)
+
+# define replacement mapping
+replacements <- c(
+  "Czech Republic" = "Czechia",
+  "Hong Kong" = "China"
+)
+
+# apply replacements across all country_* columns
+data_user_unique_updated <- data_user_unique_updated %>%
+  mutate(across(all_of(country_cols),
+                ~ dplyr::recode(., !!!replacements)))
+
+remaining <- data_user_unique_updated %>%
+  select(all_of(country_cols)) %>%
+  summarise(across(
+    everything(),
+    ~ sum(str_detect(., regex("Hong\\s*Kong|Czech\\s*Republic", ignore_case = TRUE)), na.rm = TRUE)
+  ))
+
+
+write_parquet(data_user_unique_updated, sink = "Output/user_data_sectors_country_2025_10_10.parquet")
+
 
 
 #--------------------------------------------------------------------
