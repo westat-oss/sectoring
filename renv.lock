@@ -5085,7 +5085,7 @@
       "RemoteUsername": "westat-oss",
       "RemoteRepo": "tidyorgs",
       "RemoteRef": "main",
-      "RemoteSha": "3b9a5ddd64f9a1dde5ef1046533ebfdb0841c413"
+      "RemoteSha": "dffea578722cfdafb2819bfcf3588c6ab58c137d"
     },
     "tidyr": {
       "Package": "tidyr",
