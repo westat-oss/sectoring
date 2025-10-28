@@ -101,10 +101,14 @@ data_user_unique_updated <- data_user_unique_updated %>%
 #--------------------------------------------------------------------
 
 # Country data cleaning
-state_codes <- c("al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id", "il", "in", "ia", "ks", "ky", 
-                 "la", "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", 
-                 "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", 
-                 "wv", "wi", "wy", "nyc", "dc", "sf")
+two_letter_state_or_city_codes <- c(
+  "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id", "il", "in", "ia", "ks", "ky", 
+  "la", "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", 
+  "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", 
+  "wv", "wi", "wy", "dc",
+  "sf"
+)
+three_letter_state_or_city_codes <- c("nyc")
 
 # PROCESS 1: If the last two letters correspond to state abbreviation, then classify as US
 
@@ -118,7 +122,8 @@ data_country_unique <- data_country_unique %>%
         tolower(country_location), 
         fixed("united states", ignore_case = TRUE)
        )                                            ~ country_location,
-      str_sub(location, -2, -1) %in% state_codes    ~ "United States", 
+      str_sub(location, -2, -1) %in% two_letter_state_or_city_codes   ~ "United States", 
+      str_sub(location, -3, -1) %in% three_letter_state_or_city_codes ~ "United States", 
       TRUE                                          ~ country_location
     )
   )
