@@ -1,2 +1,4 @@
 Data/*parquet
 Data/Partitioned_Output/*
+.Rproj.user
+sectoring.Rproj
