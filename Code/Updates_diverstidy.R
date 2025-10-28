@@ -1,30 +1,6 @@
+# Specify display options, load necessary packages ----
 
-# skip if you have already installed the packages in updates_tidyorgs.R
-
-# install.packages("devtools")
-# install.packages('jsonlite')
-# install.packages("arrow")
-# install.packages("rlang")
-# install.packages("stringr")
-# install.packages("tibble")
-# install.packages("tidyverse")
-# install.packages("readxl")
-# install.packages("writexl")
-# install.packages("dplyr")
-# install.packages('shiny')
-# install.packages('progress')
-
-
-
-
-
-# updates paths
-path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
-path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
-path_to_user_data <- "Output/user_data_sectors_2025_10_08.parquet"
-path_to_partitioned_output <- "Output/10_08_2025"
-
-
+options(width = 1000)
 
 library(devtools)
 library(tidyorgs)
@@ -36,15 +12,19 @@ library(stringr)
 library(tidyverse)
 library(readxl)
 library(writexl)
-options(width = 1000)
 library(arrow)
 library(progress)
+
+# Specify relevant paths for data
+
+path_to_user_data <- "Data/user_data_2025_02_11.parquet"
+path_to_partitioned_output <- "Code/Partitioned_Output"
+
 
 # ------------------LOADING THE DATA------------------
 
 # Load the file and check column names
-data_path <- "diverstidy/data/countries_data.rda"
-load(data_path)
+data("countries_data", package = "diverstidy")
 
 # ------------------CHANGES TO THE DATA------------------
 
