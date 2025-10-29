@@ -1443,7 +1443,7 @@
       "RemoteUsername": "westat-oss",
       "RemoteRepo": "diverstidy",
       "RemoteRef": "main",
-      "RemoteSha": "b1fbda6307ea82764746fbed622601f4cc690e57"
+      "RemoteSha": "3e0d39b810d719bb9b6f760a4d1791b8577911da"
     },
     "downlit": {
       "Package": "downlit",
