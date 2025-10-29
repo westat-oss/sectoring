@@ -16,59 +16,17 @@ library(arrow)
 library(progress)
 
 # Specify relevant paths for data
-
 path_to_user_data <- "Data/user_data_2025_02_11.parquet"
 path_to_partitioned_output <- "Code/Partitioned_Output"
 
-
-# ------------------LOADING THE DATA------------------
-
-# Load the file and check column names
-data("countries_data", package = "diverstidy")
-
-# ------------------CHANGES TO THE DATA------------------
-
-# Define updates: List of countries and the cities to add
-
-updates <- list(
-  list(country = "italy|italia", cities_to_add = "|bastia umbra"),
-  list(country = "indonesia", cities_to_add = "|indonesian"),
-  list(country = "united states of america|united states|usa", cities_to_add = "|bayonne|odessa tx|odessa|untied states"),
-  list(country = "india", cities_to_add = "|goa|cochin|chengannur"),
-  list(country = "bulgaria", cities_to_add = "|madara"),
-  list(country = "united kingdom|great britain|uk|gb|england|scotland|wales|northern ireland|great britain|britain", cities_to_add = "|great bri ain"),
-  list(country = "south korea|korea republic of|korea republic of|rep of korea|republic of korea|korea republic", cities_to_add = "|korea"),
-  list(country = "france", cities_to_add = "|sophia antipolis")
-)
-
-# Iterate and update the existing data
-for (update in updates) {
-  row_index <- which(countries_data$countries == update$country)
-  
-  if (length(row_index) > 0) {  # Ensure the country exists in the dataset
-    countries_data$cities[row_index] <- paste0(countries_data$cities[row_index], update$cities_to_add)
-    countries_data$recode_cities[row_index] <- paste0(countries_data$recode_cities[row_index], update$cities_to_add)
-  }
-}
-
-
-# ------------------REMOVING 'NEW' FROM 'JERSEY' COUNTRY------------------
-row_index <- which(countries_data$countries == "jersey")
-if (length(row_index) > 0) {  # Ensure the country exists in the dataset
-  # Remove "(?!new )" from recode_countries
-  countries_data$recode_countries[row_index] <- gsub("\\(\\?!new \\)", "", countries_data$recode_countries[row_index])
-}
-
-
-
-#-------------------------USER DATA-------------------------------------
-
+# Load input data
 data <- read_parquet(path_to_user_data)
 
 #  Re-encode columns that may contain problematic characters   
 filtered_data <- data %>%
   mutate(across(everything(), ~ enc2utf8(as.character(.)))) 
 
+# Determine size of chunks to use for data processing
 total_rows <- nrow(filtered_data)
 num_parts <- 100  # Split data into 100 parts           
 rows_per_part <- ceiling(total_rows / num_parts)  # Rows in each part
