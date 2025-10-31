@@ -16,8 +16,8 @@ library(arrow)
 library(progress)
 
 # Specify relevant paths for data
-path_to_user_data <- "Data/user_data_2025_02_11.parquet"
-path_to_partitioned_output <- "Code/Partitioned_Output"
+path_to_user_data <- "Data/user_data_diff_sample_2025_10_08.parquet"
+path_to_partitioned_output <- "Data/New_Partitioned_Output"
 
 # Load input data
 data <- read_parquet(path_to_user_data)
@@ -37,6 +37,35 @@ output_base_dir <- path_to_partitioned_output
 # Create output directory if it doesn't exist
 if (!dir.exists(output_base_dir)) {
   dir.create(output_base_dir, recursive = TRUE)
+}
+
+# Define function to suplement country assignments from diverstidy for specific reasons
+
+add_more_country_assignments <- function(df) {
+
+  new_assignments <- df |> 
+    # Drop cases that are already assigned as United States
+    group_by(login) |>
+    filter(!any(country_location == "United States")) |>
+    ungroup()
+
+  if (nrow(new_assignments) > 0) { 
+    new_assignments <- new_assignments |> mutate(
+      lower_location = tolower(location),
+      country_location = case_when(
+        is.na(lower_location) ~ NA_character_,
+        str_detect(lower_location, "new jersey")                      ~ "United States", # Avoid misclassification of New Jersey as the island nation of Jersey 
+        str_detect(lower_location, "new mexico")                      ~ "United States", # Avoid misclassification of New Mexico as Mexico
+        str_detect(lower_location, "(^|\\b)usa($|\\b)")               ~ "United States", # Check for the word 'usa'
+        str_detect(lower_location, "(^|\\b)(nyc|sfo|hou|atl)($|\\b)") ~ "United States", # Check for common, distinctive US city abbreviations used as a word
+        TRUE ~ NA_character_
+      )
+    ) |>
+    filter(!is.na(country_location)) |>
+    select(-lower_location)
+  }
+  result <- df |> bind_rows(new_assignments)
+  return(result)
 }
 
 # Set the part number from which to resume processing
@@ -71,13 +100,14 @@ for (part_num in resume_from_part:num_parts) {
   # Print which part is running
   cat(sprintf("\nProcessing Part %d out of %d (Rows: %d to %d)\n", part_num, num_parts, start_idx, end_idx))
   
-  # Run detect_geographies on this part
+  # Add country assignments on the current chunk of data
   part_result <- part_data %>%
-      detect_geographies(
-        login, 
-        input = c("location", "bio", "socialaccounts"),  
-        email = "author_email"
-      )
+    detect_geographies(
+      login, 
+      input = c("location", "bio", "socialaccounts"),  
+      email = "author_email"
+    ) |>
+    add_more_country_assignments()
   
   # Create folder for the part if it doesn't exist
   if (!dir.exists(part_output_dir)) {
@@ -115,6 +145,3 @@ merged_output_file <- file.path(output_base_dir, "user_data_combined.parquet")
 write_parquet(combined_data, sink = merged_output_file)
 
 cat(sprintf("\nMerged %d files into %s\n", length(parquet_files), merged_output_file))
-
-
-
