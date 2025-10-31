@@ -28,11 +28,13 @@ We use [the 'renv' R package](https://rstudio.github.io/renv/) to manage R packa
 
 3. Run `renv::restore()` to ensure that necessary dependencies are installed at the required versions.
 
-4. Run 'Updates_tidyorgs.R'
+4. Run the script 'Updates_tidyorgs.R'. This script reads in user data and conducts sectoring assignments using the 'tidyorgs' R package.
 
-5. Run 'Updates_diverstidy.R' 
+5. Run the script 'Updates_diverstidy.R'. This script reads in user data and conducts country assignments using the 'diverstidy' R package.
 
-6. To merge the two outputs, run 'Merge_and_EDA.R' 
+6. Run the script 'merge_country_and_sector_data.R'. This merges the outputs from the previous scripts into a single parquet file. The output has the same structure as the original user data supplied to the two previous R scripts, but with additional columns added.
+
+The R script "exploratory_data_analysis.R" can be used to conduct exploratory data analysis on the parquet output file created at the end of step 6.
 
 # Notes for Future Development
 
