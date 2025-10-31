@@ -18,7 +18,7 @@ library(glue)
 
 path_to_user_data      <- file.path("Data", "user_data_diff_sample_2025_10_08.parquet")
 path_to_sector_output  <- file.path("Data", "user_data_sectors_2025_10_08.parquet")
-path_to_country_output <- file.path("Data", "New_Partitioned_Output", "user_data_combined.parquet")
+path_to_country_output <- file.path("Data", "Partitioned_Output_2025_10_08", "user_data_combined.parquet")
 path_to_output         <- file.path("Data", "user_data_country_sectors_2025_10_08.parquet")
 
 data_user    <- open_dataset(path_to_user_data)
@@ -111,6 +111,19 @@ merged_data <- full_join(
   by = "login",
   relationship = "one-to-one"
 )
+
+other_cols_from_data_user <- setdiff(colnames(data_user), colnames(merged_data))
+if (length(other_cols_from_data_user) > 0) {
+  merged_data <- left_join(
+    x  = data_user |> 
+      select(login, all_of(other_cols_from_data_user)) |>
+      collect(),
+    y  = merged_data,
+    by = "login",
+    relationship = "one-to-one",
+    unmatched = "error"
+  )
+}
 
 if (nrow(merged_data) != nrow(data_user)) {
   stop("`merged_data` should have the same number of records as `data_user`.")

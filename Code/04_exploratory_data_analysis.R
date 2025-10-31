@@ -13,7 +13,7 @@ library(arrow)
 
 # Load data ----
 
-path_to_output <- file.path("Data", "user_data_country_sectors_governmentClassification_2025_03_24.parquet")
+path_to_output <- file.path("Data", "user_data_country_sectors_2025_10_08.parquet")
 merged_data <- read_parquet(path_to_output)
 
 #--------------------------------------------------------------------

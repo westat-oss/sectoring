@@ -16,8 +16,8 @@ library(arrow)
 library(progress)
 
 # Specify relevant paths for data
-path_to_user_data <- "Data/user_data_diff_sample_2025_10_08.parquet"
-path_to_partitioned_output <- "Data/New_Partitioned_Output"
+path_to_user_data          <- file.path("Data", "user_data_diff_sample_2025_10_08.parquet")
+path_to_partitioned_output <- file.path("Data", "Partitioned_Output_2025_10_08")
 
 # Load input data
 data <- read_parquet(path_to_user_data)

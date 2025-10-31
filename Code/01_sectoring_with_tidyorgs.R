@@ -14,8 +14,8 @@ library(progress)
 
 # Specify relevant paths for data ----
 
-path_to_user_data <- "Data/user_data_diff_sample_2025_10_08.parquet"
-path_to_output    <- "Data/user_data_sectors_2025_10_08.parquet"
+path_to_user_data <- file.path("Data", "user_data_diff_sample_2025_10_08.parquet")
+path_to_output    <- file.path("Data", "user_data_sectors_2025_10_08.parquet")
 
 # Load user data ----
 
