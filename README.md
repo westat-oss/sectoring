@@ -6,7 +6,7 @@ This code repository is used to match GitHub users to countries and industrial s
 
 Below are the key folders and files in this repo.
 
-- `Code`: Contains R scripts to run organizational sectoring and geographic attribution of GitHub users. The key R scripts for this are `Updates_tidyorgs.R` and `Updates_diverstidy.R`.
+- `Code`: Contains R scripts to run organizational sectoring and geographic attribution of GitHub users.
 
 - `Data`: Folder used to store input and output datasets. The R scripts refer extensively to the `Data` folder. The datasets themselves are not tracked with Git as they are large and are stored as binary files (mainly `.parquet`).
 
@@ -28,11 +28,13 @@ We use [the 'renv' R package](https://rstudio.github.io/renv/) to manage R packa
 
 3. Run `renv::restore()` to ensure that necessary dependencies are installed at the required versions.
 
-4. Run 'Updates_tidyorgs.R'
+4. Run the script '01_sectoring_with_tidyorgs.R'. This script reads in user data and conducts sectoring assignments using the 'tidyorgs' R package.
 
-5. Run 'Updates_diverstidy.R' 
+5. Run the script '02_country_assignments_with_diverstidy.R'. This script reads in user data and conducts country assignments using the 'diverstidy' R package.
 
-6. To merge the two outputs, run 'Merge_and_EDA.R' 
+6. Run the script '03_merge_country_and_sector_data.R'. This merges the outputs from the previous scripts into a single parquet file. The output has the same structure as the original user data supplied to the two previous R scripts, but with additional columns added.
+
+The R script "04_exploratory_data_analysis.R" can be used to conduct exploratory data analysis on the parquet output file created at the end of step 6.
 
 # Notes for Future Development
 

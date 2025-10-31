@@ -1,30 +1,6 @@
+# Specify display options, load necessary packages ----
 
-# skip if you have already installed the packages in updates_tidyorgs.R
-
-# install.packages("devtools")
-# install.packages('jsonlite')
-# install.packages("arrow")
-# install.packages("rlang")
-# install.packages("stringr")
-# install.packages("tibble")
-# install.packages("tidyverse")
-# install.packages("readxl")
-# install.packages("writexl")
-# install.packages("dplyr")
-# install.packages('shiny')
-# install.packages('progress')
-
-
-
-
-
-# updates paths
-path_to_tidyorgs <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/tidyorgs-main/tidyorgs-main"
-path_to_diverstidy <- "C:/Users/Saluja_R/Desktop/Westat/OSS/Sectoring GH - VM/sectoring/diverstidy-main/diverstidy-main"
-path_to_user_data <- "Output/user_data_sectors_2025_10_08.parquet"
-path_to_partitioned_output <- "Output/10_08_2025"
-
-
+options(width = 1000)
 
 library(devtools)
 library(tidyorgs)
@@ -36,59 +12,21 @@ library(stringr)
 library(tidyverse)
 library(readxl)
 library(writexl)
-options(width = 1000)
 library(arrow)
 library(progress)
 
-# ------------------LOADING THE DATA------------------
+# Specify relevant paths for data
+path_to_user_data <- "Data/user_data_diff_sample_2025_10_08.parquet"
+path_to_partitioned_output <- "Data/New_Partitioned_Output"
 
-# Load the file and check column names
-data_path <- "diverstidy/data/countries_data.rda"
-load(data_path)
-
-# ------------------CHANGES TO THE DATA------------------
-
-# Define updates: List of countries and the cities to add
-
-updates <- list(
-  list(country = "italy|italia", cities_to_add = "|bastia umbra"),
-  list(country = "indonesia", cities_to_add = "|indonesian"),
-  list(country = "united states of america|united states|usa", cities_to_add = "|bayonne|odessa tx|odessa|untied states"),
-  list(country = "india", cities_to_add = "|goa|cochin|chengannur"),
-  list(country = "bulgaria", cities_to_add = "|madara"),
-  list(country = "united kingdom|great britain|uk|gb|england|scotland|wales|northern ireland|great britain|britain", cities_to_add = "|great bri ain"),
-  list(country = "south korea|korea republic of|korea republic of|rep of korea|republic of korea|korea republic", cities_to_add = "|korea"),
-  list(country = "france", cities_to_add = "|sophia antipolis")
-)
-
-# Iterate and update the existing data
-for (update in updates) {
-  row_index <- which(countries_data$countries == update$country)
-  
-  if (length(row_index) > 0) {  # Ensure the country exists in the dataset
-    countries_data$cities[row_index] <- paste0(countries_data$cities[row_index], update$cities_to_add)
-    countries_data$recode_cities[row_index] <- paste0(countries_data$recode_cities[row_index], update$cities_to_add)
-  }
-}
-
-
-# ------------------REMOVING 'NEW' FROM 'JERSEY' COUNTRY------------------
-row_index <- which(countries_data$countries == "jersey")
-if (length(row_index) > 0) {  # Ensure the country exists in the dataset
-  # Remove "(?!new )" from recode_countries
-  countries_data$recode_countries[row_index] <- gsub("\\(\\?!new \\)", "", countries_data$recode_countries[row_index])
-}
-
-
-
-#-------------------------USER DATA-------------------------------------
-
+# Load input data
 data <- read_parquet(path_to_user_data)
 
 #  Re-encode columns that may contain problematic characters   
 filtered_data <- data %>%
   mutate(across(everything(), ~ enc2utf8(as.character(.)))) 
 
+# Determine size of chunks to use for data processing
 total_rows <- nrow(filtered_data)
 num_parts <- 100  # Split data into 100 parts           
 rows_per_part <- ceiling(total_rows / num_parts)  # Rows in each part
@@ -99,6 +37,35 @@ output_base_dir <- path_to_partitioned_output
 # Create output directory if it doesn't exist
 if (!dir.exists(output_base_dir)) {
   dir.create(output_base_dir, recursive = TRUE)
+}
+
+# Define function to suplement country assignments from diverstidy for specific reasons
+
+add_more_country_assignments <- function(df) {
+
+  new_assignments <- df |> 
+    # Drop cases that are already assigned as United States
+    group_by(login) |>
+    filter(!any(country_location == "United States")) |>
+    ungroup()
+
+  if (nrow(new_assignments) > 0) { 
+    new_assignments <- new_assignments |> mutate(
+      lower_location = tolower(location),
+      country_location = case_when(
+        is.na(lower_location) ~ NA_character_,
+        str_detect(lower_location, "new jersey")                      ~ "United States", # Avoid misclassification of New Jersey as the island nation of Jersey 
+        str_detect(lower_location, "new mexico")                      ~ "United States", # Avoid misclassification of New Mexico as Mexico
+        str_detect(lower_location, "(^|\\b)usa($|\\b)")               ~ "United States", # Check for the word 'usa'
+        str_detect(lower_location, "(^|\\b)(nyc|sfo|hou|atl)($|\\b)") ~ "United States", # Check for common, distinctive US city abbreviations used as a word
+        TRUE ~ NA_character_
+      )
+    ) |>
+    filter(!is.na(country_location)) |>
+    select(-lower_location)
+  }
+  result <- df |> bind_rows(new_assignments)
+  return(result)
 }
 
 # Set the part number from which to resume processing
@@ -133,13 +100,14 @@ for (part_num in resume_from_part:num_parts) {
   # Print which part is running
   cat(sprintf("\nProcessing Part %d out of %d (Rows: %d to %d)\n", part_num, num_parts, start_idx, end_idx))
   
-  # Run detect_geographies on this part
+  # Add country assignments on the current chunk of data
   part_result <- part_data %>%
-      detect_geographies(
-        login, 
-        input = c("location", "bio", "socialaccounts"),  
-        email = "author_email"
-      )
+    detect_geographies(
+      login, 
+      input = c("location", "bio", "socialaccounts"),  
+      email = "author_email"
+    ) |>
+    add_more_country_assignments()
   
   # Create folder for the part if it doesn't exist
   if (!dir.exists(part_output_dir)) {
@@ -177,6 +145,3 @@ merged_output_file <- file.path(output_base_dir, "user_data_combined.parquet")
 write_parquet(combined_data, sink = merged_output_file)
 
 cat(sprintf("\nMerged %d files into %s\n", length(parquet_files), merged_output_file))
-
-
-
