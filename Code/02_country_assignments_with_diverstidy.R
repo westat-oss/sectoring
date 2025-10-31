@@ -46,7 +46,7 @@ add_more_country_assignments <- function(df) {
   new_assignments <- df |> 
     # Drop cases that are already assigned as United States
     group_by(login) |>
-    filter(!any(country_location == "United States")) |>
+    filter(all(is.na(country_location) | country_location != "United States")) |>
     ungroup()
 
   if (nrow(new_assignments) > 0) { 
