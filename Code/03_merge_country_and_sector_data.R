@@ -16,14 +16,14 @@ library(glue)
 # Load input datasets
 #--------------------------------------------------------------------
 
-path_to_user_data      <- file.path("Data", "user_data_diff_sample_2025_10_08.parquet")
+path_to_user_data      <- file.path("Data", "user_data_2025_10_08.parquet")
 path_to_sector_output  <- file.path("Data", "user_data_sectors_2025_10_08.parquet")
 path_to_country_output <- file.path("Data", "Partitioned_Output_2025_10_08", "user_data_combined.parquet")
 path_to_output         <- file.path("Data", "user_data_country_sectors_2025_10_08.parquet")
 
-data_user    <- open_dataset(path_to_user_data)
-data_sector  <- open_dataset(path_to_sector_output)
-data_country <- open_dataset(path_to_country_output)
+data_user    <- read_parquet(path_to_user_data)
+data_sector  <- read_parquet(path_to_sector_output)
+data_country <- read_parquet(path_to_country_output)
 
 #--------------------------------------------------------------------
 # Checking total number of rows and duplicate values in datasets
@@ -74,6 +74,8 @@ data_country_unique <- data_country |>
     ),
     .groups = "drop"
   )
+data_country_unique <- data_country_unique[ , !(names(data_country_unique) %in%
+  c("country_academic", "country_business", "country_government", "country_nonprofit"))]
 
 #--------------------------------------------------------------------
 # Additional Cleaning for Sectoring File
@@ -99,12 +101,15 @@ data_sector_cleaned <- data_sector_cleaned %>%
     country_business = if_else(isemployee, "United States", country_business)
   )
 
+data_sector_cleaned_unique <- data_sector_cleaned |>
+  distinct(login, .keep_all = TRUE)
+
 #--------------------------------------------------------------------
 # Merging the output from diverstidy and tidyorgs
 #--------------------------------------------------------------------
 
 merged_data <- full_join(
-  x = data_sector_cleaned, 
+  x = data_sector_cleaned_unique, 
   y = data_country_unique |>
     select(login, starts_with("country_")) |>
     collect(), 
@@ -112,10 +117,14 @@ merged_data <- full_join(
   relationship = "one-to-one"
 )
 
-other_cols_from_data_user <- setdiff(colnames(data_user), colnames(merged_data))
+x_add <- data_user |>
+  select(login, all_of(other_cols_from_data_user)) |>
+  distinct(login, .keep_all = TRUE) 
+
+other_cols_from_data_user <- setdiff(colnames(x_add), colnames(merged_data))
 if (length(other_cols_from_data_user) > 0) {
   merged_data <- left_join(
-    x  = data_user |> 
+    x  = x_add |> 
       select(login, all_of(other_cols_from_data_user)) |>
       collect(),
     y  = merged_data,
@@ -129,4 +138,23 @@ if (nrow(merged_data) != nrow(data_user)) {
   stop("`merged_data` should have the same number of records as `data_user`.")
 }
 
-write_parquet(merged_data, sink = path_to_output)
+#--------------------------------------------------------------------
+# Custom Country Names
+#--------------------------------------------------------------------
+
+country_cols <- grep("^country_", names(merged_data), value = TRUE)
+
+# define replacement mapping
+replacements <- c(
+  "Czech Republic" = "Czechia",
+  "Hong Kong" = "China"
+)
+
+# apply replacements across all country_* columns
+merged_data_replaced <- merged_data %>%
+  mutate(across(all_of(country_cols),
+                ~ dplyr::recode(., !!!replacements)))
+
+write_parquet(merged_data_replaced, sink = path_to_output)
+
+
